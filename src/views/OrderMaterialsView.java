@@ -15,8 +15,8 @@ import java.util.List;
  * OrderMaterialsView
  *
  * Tabs:
- *   1. Browse & Add to Cart  – customer browses company inventory, picks qty, adds to cart
- *   2. Shopping Cart         – review items, see live cost calculation, place order
+ * 1. Browse & Add to Cart  – customer browses company inventory, picks qty, adds to cart
+ * 2. Shopping Cart         – review items, see live cost calculation, place order
  */
 public class OrderMaterialsView extends JPanel {
 
@@ -265,21 +265,33 @@ public class OrderMaterialsView extends JPanel {
         catalogModel.setRowCount(0);
         // getCompanyInventory returns: materialId, name, category, unitPrice, sellingPrice, companyStock
         List<Object[]> rows = materialCtrl.getCompanyInventory(keyword);
-        if (rows.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                "No materials found" + (keyword.isEmpty() ? "." : " for: " + keyword),
-                "No Results", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
+        
+        boolean elementsAdded = false;
+        
         for (Object[] r : rows) {
+            double sellingPrice = parseDouble(r[4]);
+            
+            // CRITICAL FIX: Skip the item completely if staff hasn't priced it yet (price is 0.0)
+            if (sellingPrice <= 0.0) {
+                continue;
+            }
+            
+            elementsAdded = true;
+            
             // columns shown: ID, name, category, sellingPrice (index 4), companyStock (index 5)
             catalogModel.addRow(new Object[]{
                 r[0],                              // hidden ID
                 r[1],                              // name
                 r[2],                              // category
-                String.format("%.2f", r[4]),       // selling price
+                String.format("%.2f", sellingPrice), // selling price
                 r[5]                               // company stock
             });
+        }
+        
+        if (!elementsAdded) {
+            JOptionPane.showMessageDialog(this,
+                "No materials available" + (keyword.isEmpty() ? "." : " for: " + keyword),
+                "No Results", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -300,7 +312,7 @@ public class OrderMaterialsView extends JPanel {
         double grand = orderCtrl.calculateGrandTotal(subtotal, tax, 0);
 
         lblSubtotal.setText(String.format("Subtotal:    RM %.2f", subtotal));
-        lblTax.setText(String.format("Tax (6%):   RM %.2f", tax));
+        lblTax.setText(String.format("Tax (6%):    RM %.2f", tax));
         lblTotal.setText(String.format("Grand Total: RM %.2f", grand));
     }
 

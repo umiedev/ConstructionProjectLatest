@@ -11,7 +11,7 @@ import java.util.List;
 
 public class SupplierController {
 
-    /** Human-readable description of the most recent failure (null when the last op succeeded). */
+    
     private String lastError = null;
 
     public String getLastError() {
