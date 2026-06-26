@@ -238,8 +238,18 @@ public class OrderMaterialsView extends JPanel {
                     "No Selection", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            cartItems.remove(row);
-            refreshCartTable();
+            
+            String matName = (String) cartModel.getValueAt(row, 0);
+            
+            // Added confirmation prompt before deletion
+            int confirm = JOptionPane.showConfirmDialog(this, 
+                "Are you sure you want to remove '" + matName + "' from your cart?", 
+                "Confirm Removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                
+            if (confirm == JOptionPane.YES_OPTION) {
+                cartItems.remove(row);
+                refreshCartTable();
+            }
         });
 
         btnClearCart.addActionListener(e -> {
@@ -263,7 +273,6 @@ public class OrderMaterialsView extends JPanel {
 
     private void loadCatalog(String keyword) {
         catalogModel.setRowCount(0);
-        // getCompanyInventory returns: materialId, name, category, unitPrice, sellingPrice, companyStock
         List<Object[]> rows = materialCtrl.getCompanyInventory(keyword);
         
         boolean elementsAdded = false;
@@ -271,20 +280,18 @@ public class OrderMaterialsView extends JPanel {
         for (Object[] r : rows) {
             double sellingPrice = parseDouble(r[4]);
             
-            // CRITICAL FIX: Skip the item completely if staff hasn't priced it yet (price is 0.0)
             if (sellingPrice <= 0.0) {
                 continue;
             }
             
             elementsAdded = true;
             
-            // columns shown: ID, name, category, sellingPrice (index 4), companyStock (index 5)
             catalogModel.addRow(new Object[]{
-                r[0],                              // hidden ID
-                r[1],                              // name
-                r[2],                              // category
-                String.format("%.2f", sellingPrice), // selling price
-                r[5]                               // company stock
+                r[0],                              
+                r[1],                              
+                r[2],                              
+                String.format("%.2f", sellingPrice), 
+                r[5]                               
             });
         }
         
@@ -312,7 +319,7 @@ public class OrderMaterialsView extends JPanel {
         double grand = orderCtrl.calculateGrandTotal(subtotal, tax, 0);
 
         lblSubtotal.setText(String.format("Subtotal:    RM %.2f", subtotal));
-        lblTax.setText(String.format("Tax (6%):    RM %.2f", tax));
+        lblTax.setText(String.format("Tax (6%%):    RM %.2f", tax));
         lblTotal.setText(String.format("Grand Total: RM %.2f", grand));
     }
 
@@ -329,7 +336,6 @@ public class OrderMaterialsView extends JPanel {
             "Place Order", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
 
-        // Build Order & OrderItems from cart
         double subtotal = 0;
         List<OrderItem> items = new ArrayList<>();
         for (Object[] ci : cartItems) {
